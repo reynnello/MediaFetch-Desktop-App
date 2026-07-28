@@ -1,0 +1,11 @@
+bin/
+obj/
+MediaFetch.Tests/bin/
+MediaFetch.Tests/obj/
+.mediafetch-data/
+downloads/
+*.db
+*.db-shm
+*.db-wal
+.vs/
+.idea/
