@@ -10,3 +10,4 @@ tools/
 *.db-wal
 .vs/
 .idea/
+.gitattributes
