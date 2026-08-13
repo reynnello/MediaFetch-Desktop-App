@@ -1,0 +1,75 @@
+﻿<Window x:Class="MediaFetch.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MediaFetch"
+        Height="420"
+        Width="620"
+        WindowStartupLocation="CenterScreen">
+
+	<Grid Margin="32">
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto" />
+			<RowDefinition Height="Auto" />
+			<RowDefinition Height="Auto" />
+			<RowDefinition Height="Auto" />
+			<RowDefinition Height="*" />
+		</Grid.RowDefinitions>
+
+		<TextBlock Text="MediaFetch"
+                   FontSize="28"
+                   FontWeight="SemiBold" />
+
+		<TextBlock Grid.Row="1"
+                   Margin="0,8,0,20"
+                   Text="Download public media you have permission to save."
+                   Foreground="Gray" />
+
+		<TextBox x:Name="UrlTextBox"
+                 Grid.Row="2"
+                 Height="38"
+                 Padding="10"
+                 FontSize="14"
+                 VerticalContentAlignment="Center"
+                 ToolTip="Paste a video URL here" />
+
+		<StackPanel Grid.Row="3"
+                    Margin="0,16,0,0"
+                    Orientation="Horizontal">
+			<ComboBox x:Name="FormatComboBox"
+                      Width="130"
+                      Height="36"
+                      SelectedIndex="0">
+				<ComboBoxItem Content="MP4 video" />
+				<ComboBoxItem Content="MP3 audio" />
+			</ComboBox>
+
+			<ComboBox x:Name="QualityComboBox"
+                      Width="110"
+                      Height="36"
+                      Margin="12,0,0,0"
+                      SelectedIndex="1">
+				<ComboBoxItem Content="360p" />
+				<ComboBoxItem Content="720p" />
+				<ComboBoxItem Content="1080p" />
+			</ComboBox>
+
+			<Button x:Name="DownloadButton"
+                    Width="140"
+                    Height="36"
+                    Margin="12,0,0,0"
+                    Content="Download"
+					Click="DownloadButton_Click" />
+		</StackPanel>
+
+		<StackPanel Grid.Row="4"
+                    Margin="0,24,0,0">
+			<TextBlock  x:Name="StatusText"
+				        Text="Status: Ready" />
+			<ProgressBar Height="12"
+                         Margin="0,8,0,0"
+                         Minimum="0"
+                         Maximum="100"
+                         Value="0" />
+		</StackPanel>
+	</Grid>
+</Window>
