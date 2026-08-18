@@ -31,7 +31,8 @@
                  Padding="10"
                  FontSize="14"
                  VerticalContentAlignment="Center"
-                 ToolTip="Paste a video URL here" />
+                 ToolTip="Paste a video URL here"
+				 TextChanged="UrlTextBox_TextChanged" />
 
 		<StackPanel Grid.Row="3"
                     Margin="0,16,0,0"

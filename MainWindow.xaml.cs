@@ -44,17 +44,31 @@ public partial class MainWindow : Window
 
         Directory.CreateDirectory(_downloadsDirectory);
 
+        var isAudio = FormatComboBox.SelectedIndex == 1;
+
         var startInfo = new ProcessStartInfo
         {
             FileName = "yt-dlp",
             UseShellExecute = false,
-            CreateNoWindow = true
+            CreateNoWindow = true,
+            RedirectStandardError = true
         };
 
         // Add the URL and output directory as arguments
         startInfo.ArgumentList.Add("--no-playlist");
-        startInfo.ArgumentList.Add("--merge-output-format");
-        startInfo.ArgumentList.Add("mp4");
+
+        if (isAudio)
+        {
+            startInfo.ArgumentList.Add("--extract-audio");
+            startInfo.ArgumentList.Add("--audio-format");
+            startInfo.ArgumentList.Add("mp3");
+        }
+        else
+        {
+            startInfo.ArgumentList.Add("--merge-output-format");
+            startInfo.ArgumentList.Add("mp4");
+        }
+
         startInfo.ArgumentList.Add("--output");
         startInfo.ArgumentList.Add(Path.Combine(_downloadsDirectory, "%(title)s.%(ext)s"));
         startInfo.ArgumentList.Add(url.AbsoluteUri);
@@ -73,11 +87,21 @@ public partial class MainWindow : Window
                 return;
             }
 
-            await process.WaitForExitAsync();
+            var errorTask = process.StandardError.ReadToEndAsync();
 
-            StatusText.Text = process.ExitCode == 0
-                ? "Status: Download complete."
-                : "Status: Download failed.";
+
+            await process.WaitForExitAsync();
+            var errorText = await errorTask;
+
+            if (process.ExitCode == 0)
+            {
+                StatusText.Text = "Status: Download complete.";
+            }
+            else
+            {
+                StatusText.Text = "Status: Download failed.";
+                System.Windows.MessageBox.Show(errorText, "yt-dlp error");
+            }
         }
         catch (Exception exception)
         {
@@ -109,4 +133,87 @@ public partial class MainWindow : Window
         StatusText.Text = "Status: Download folder selected.";
     }
 
+    // Text changed event handler for the URL text box
+    private CancellationTokenSource? _linkCheckCancellation;
+
+    private async void UrlTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+    {
+        _linkCheckCancellation?.Cancel();
+        _linkCheckCancellation = new CancellationTokenSource();
+
+        try
+        {
+            await Task.Delay(700, _linkCheckCancellation.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        var urlText = UrlTextBox.Text.Trim();
+
+        if (string.IsNullOrWhiteSpace(urlText))
+        {
+            StatusText.Text = "Status: Paste a URL first.";
+            return;
+        }
+
+        if (!Uri.TryCreate(urlText, UriKind.Absolute, out var url)
+                || url is null
+                || (url.Scheme != Uri.UriSchemeHttp
+                && url.Scheme != Uri.UriSchemeHttps))
+        {
+            StatusText.Text = "Status: Enter a valid HTTP or HTTPS URL.";
+            return;
+        }
+
+        StatusText.Text = "Status: Checking link...";
+
+        var getMetaData = new ProcessStartInfo
+        {
+            FileName = "yt-dlp",
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardError = true,
+            RedirectStandardOutput = true
+        };
+
+        getMetaData.ArgumentList.Add("--dump-single-json");
+        getMetaData.ArgumentList.Add("--skip-download");
+        getMetaData.ArgumentList.Add("--no-playlist");
+        getMetaData.ArgumentList.Add(url.AbsoluteUri);
+
+        try
+        {
+            using var process = Process.Start(getMetaData);
+
+            if (process is null)
+            {
+                StatusText.Text = "Status: Could not start yt-dlp.";
+                return;
+            }
+
+            var outputTask = process.StandardOutput.ReadToEndAsync();
+            var errorTask = process.StandardError.ReadToEndAsync();
+
+            await process.WaitForExitAsync();
+
+            var output = await outputTask;
+            var error = await errorTask;
+
+            if (process.ExitCode == 0)
+            {
+                StatusText.Text = $"Status: Metadata received: {output.Length} characters.";
+            }
+            else
+            {
+                StatusText.Text = "Status: Could not inspect link.";
+                System.Windows.MessageBox.Show(error, "yt-dlp error");
+            }
+        }
+        catch (Exception exception)
+        {
+            StatusText.Text = $"Status: {exception.Message}";
+        }
+    }
 }
