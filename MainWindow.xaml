@@ -38,21 +38,28 @@
                     Margin="0,16,0,0"
                     Orientation="Horizontal">
 			<ComboBox x:Name="FormatComboBox"
-                      Width="130"
+                      Width="140"
                       Height="36"
                       SelectedIndex="0">
-				<ComboBoxItem Content="MP4 video" />
-				<ComboBoxItem Content="MP3 audio" />
+				<ComboBoxItem Content="MP4 video" Tag="video:mp4" />
+				<ComboBoxItem Content="MKV video" Tag="video:mkv" />
+				<ComboBoxItem Content="WebM video" Tag="video:webm" />
+				<ComboBoxItem Content="MOV video" Tag="video:mov" />
+				<ComboBoxItem Content="Original audio" Tag="audio:original" />
+				<ComboBoxItem Content="MP3 audio" Tag="audio:mp3" />
+				<ComboBoxItem Content="M4A audio" Tag="audio:m4a" />
+				<ComboBoxItem Content="Opus audio" Tag="audio:opus" />
+				<ComboBoxItem Content="FLAC audio" Tag="audio:flac" />
+				<ComboBoxItem Content="WAV audio" Tag="audio:wav" />
 			</ComboBox>
 
 			<ComboBox x:Name="QualityComboBox"
-                      Width="110"
+                      Width="130"
                       Height="36"
                       Margin="12,0,0,0"
-                      SelectedIndex="1">
-				<ComboBoxItem Content="360p" />
-				<ComboBoxItem Content="720p" />
-				<ComboBoxItem Content="1080p" />
+                      IsEnabled="False">
+				<ComboBoxItem Content="Waiting for link..."
+                  IsSelected="True" />
 			</ComboBox>
 
 			<Button x:Name="DownloadButton"
@@ -81,6 +88,10 @@
 
 		<StackPanel Grid.Row="5"
                     Margin="0,24,0,0">
+			<TextBlock x:Name="MediaInfoText"
+					   Margin="0,0,0,6"
+					   Foreground="Gray"
+					   Text="Source audio: waiting for link" />
 			<TextBlock  x:Name="StatusText"
 				        Text="Status: Ready" />
 			<ProgressBar Height="12"
