@@ -476,14 +476,22 @@ public sealed class YtDlpService
 
     private static ProcessStartInfo CreateStartInfo(bool redirectStandardOutput)
     {
-        return new ProcessStartInfo
+        var startInfo = new ProcessStartInfo
         {
-            FileName = "yt-dlp",
+            FileName = ExternalToolLocator.YtDlpExecutable,
             UseShellExecute = false,
             CreateNoWindow = true,
             RedirectStandardOutput = redirectStandardOutput,
             RedirectStandardError = true
         };
+
+        if (ExternalToolLocator.BundledFfmpegDirectory is { } ffmpegDirectory)
+        {
+            startInfo.ArgumentList.Add("--ffmpeg-location");
+            startInfo.ArgumentList.Add(ffmpegDirectory);
+        }
+
+        return startInfo;
     }
 
     private static async Task<ProcessResult> RunAsync(

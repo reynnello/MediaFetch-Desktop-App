@@ -142,7 +142,7 @@ public sealed class ErrorPresentationService
             return new ErrorPresentation(
                 Title: "FFmpeg is required",
                 Message: "MediaFetch needs FFmpeg to merge streams or convert the selected output format.",
-                Suggestion: "Install FFmpeg, add it to PATH, and restart MediaFetch.",
+                Suggestion: "Re-extract the complete MediaFetch release, including its tools folder, or install FFmpeg and add it to PATH.",
                 TechnicalDetails: details);
         }
 
@@ -154,7 +154,7 @@ public sealed class ErrorPresentationService
             return new ErrorPresentation(
                 Title: "yt-dlp could not run",
                 Message: "MediaFetch could not start the yt-dlp process.",
-                Suggestion: "Confirm that the latest yt-dlp build is installed and available in PATH.",
+                Suggestion: "Re-extract the complete MediaFetch release, including its tools folder, or install the latest yt-dlp build and add it to PATH.",
                 TechnicalDetails: details);
         }
 

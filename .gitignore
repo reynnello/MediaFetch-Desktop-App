@@ -5,6 +5,7 @@ MediaFetch.Tests/obj/
 .mediafetch-data/
 downloads/
 tools/
+artifacts/
 *.db
 *.db-shm
 *.db-wal
