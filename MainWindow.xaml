@@ -1,0 +1,592 @@
+<Window x:Class="MediaFetch.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MediaFetch"
+        Width="980"
+        Height="820"
+        MinWidth="820"
+        MinHeight="700"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        FontFamily="Segoe UI"
+        ResizeMode="CanResize"
+        SizeChanged="Window_SizeChanged"
+        Closed="Window_Closed"
+        WindowStartupLocation="CenterScreen">
+
+    <Border x:Name="WindowBorder"
+            Background="{DynamicResource WindowBackgroundBrush}"
+            BorderThickness="0"
+            CornerRadius="0">
+        <Grid x:Name="WindowContent"
+              RenderTransformOrigin="0.5,0.5">
+            <Grid.RenderTransform>
+                <ScaleTransform x:Name="WindowContentScale" />
+            </Grid.RenderTransform>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="54" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid x:Name="AppHeader" Margin="20,0,10,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                    <Border Width="30"
+                            Height="30"
+                            Background="{DynamicResource AccentBrush}"
+                            CornerRadius="9">
+                        <TextBlock HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   FontSize="15"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource AccentForegroundBrush}"
+                                   Text="M" />
+                    </Border>
+                    <TextBlock Margin="10,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Text="MediaFetch" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button x:Name="ThemeButton"
+                            Style="{StaticResource IconButtonStyle}"
+                            ToolTip="Switch theme"
+                            Click="ThemeButton_Click">
+                        <Grid Width="16" Height="16">
+                            <Canvas x:Name="SunIcon" Width="16" Height="16">
+                                <Ellipse Canvas.Left="5" Canvas.Top="5"
+                                         Width="6" Height="6"
+                                         Stroke="{DynamicResource TextPrimaryBrush}"
+                                         StrokeThickness="1.6" />
+                                <Line X1="8" Y1="0" X2="8" Y2="2.5" Stroke="{DynamicResource TextPrimaryBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                <Line X1="8" Y1="13.5" X2="8" Y2="16" Stroke="{DynamicResource TextPrimaryBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                <Line X1="0" Y1="8" X2="2.5" Y2="8" Stroke="{DynamicResource TextPrimaryBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                <Line X1="13.5" Y1="8" X2="16" Y2="8" Stroke="{DynamicResource TextPrimaryBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                <Line X1="2.4" Y1="2.4" X2="4.1" Y2="4.1" Stroke="{DynamicResource TextPrimaryBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                <Line X1="11.9" Y1="11.9" X2="13.6" Y2="13.6" Stroke="{DynamicResource TextPrimaryBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                <Line X1="13.6" Y1="2.4" X2="11.9" Y2="4.1" Stroke="{DynamicResource TextPrimaryBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                <Line X1="4.1" Y1="11.9" X2="2.4" Y2="13.6" Stroke="{DynamicResource TextPrimaryBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                            </Canvas>
+                            <Path x:Name="MoonIcon"
+                                  Width="15"
+                                  Height="15"
+                                  Data="M 12,14 A 7,7 0 1 1 7,2 A 6,6 0 0 0 12,14 Z"
+                                  Fill="{DynamicResource TextPrimaryBrush}"
+                                  Stretch="Uniform"
+                                  Visibility="Collapsed" />
+                        </Grid>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <ScrollViewer x:Name="MainScrollViewer"
+                          Grid.Row="1"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto">
+                <Grid x:Name="ResponsiveContent"
+                      Width="1040"
+                      Margin="24,30,24,38"
+                      HorizontalAlignment="Center">
+                    <Grid.LayoutTransform>
+                        <ScaleTransform x:Name="ResponsiveScale" />
+                    </Grid.LayoutTransform>
+                    <StackPanel>
+                        <Border HorizontalAlignment="Left"
+                                Padding="10,5"
+                                Background="{DynamicResource SurfaceAltBrush}"
+                                CornerRadius="10">
+                            <TextBlock FontSize="11"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource AccentBrush}"
+                                       Text="MEDIA DOWNLOADER" />
+                        </Border>
+
+                        <TextBlock Margin="0,14,0,0"
+                                   FontSize="34"
+                                   FontWeight="SemiBold"
+                                   Text="Save media. Keep it simple." />
+                        <TextBlock Margin="0,7,0,0"
+                                   FontSize="14"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Text="Paste a public link, choose an output, and MediaFetch will handle the rest." />
+
+                        <TextBlock Margin="2,25,0,8"
+                                   Style="{StaticResource SectionLabelStyle}"
+                                   Text="MEDIA LINK" />
+                        <TextBox x:Name="UrlTextBox"
+                                 Style="{StaticResource ModernTextBoxStyle}"
+                                 ToolTip="Paste a public media URL here"
+                                 TextChanged="UrlTextBox_TextChanged" />
+
+                        <Border x:Name="MediaCard"
+                                Height="420"
+                                MinHeight="340"
+                                MaxHeight="500"
+                                Margin="0,18,0,0"
+                                Background="{DynamicResource PreviewPlaceholderBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="24"
+                                ClipToBounds="True"
+                                Opacity="1"
+                                SizeChanged="MediaCard_SizeChanged"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <TranslateTransform x:Name="MediaCardTranslate" />
+                            </Border.RenderTransform>
+
+                            <Grid>
+                                <Border x:Name="ThumbnailSurface"
+                                        Background="{DynamicResource PreviewPlaceholderBrush}"
+                                        CornerRadius="23" />
+
+                                <Border x:Name="ThumbnailPlaceholder"
+                                        Background="Transparent">
+                                    <StackPanel HorizontalAlignment="Center"
+                                                VerticalAlignment="Center">
+                                        <Border Width="64"
+                                                Height="64"
+                                                HorizontalAlignment="Center"
+                                                Background="{DynamicResource SurfaceAltBrush}"
+                                                CornerRadius="32">
+                                            <Path Width="18"
+                                                  Height="22"
+                                                  Margin="4,0,0,0"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  Data="M 0 0 L 18 11 L 0 22 Z"
+                                                  Fill="{DynamicResource AccentBrush}" />
+                                        </Border>
+                                        <TextBlock Margin="0,13,0,0"
+                                                   HorizontalAlignment="Center"
+                                                   FontSize="13"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   Text="Preview appears after the link is checked" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Border x:Name="PreviewGradient"
+                                        Height="150"
+                                        VerticalAlignment="Bottom"
+                                        CornerRadius="0,0,23,23"
+                                        Visibility="Collapsed">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                            <GradientStop Offset="0" Color="#00000000" />
+                                            <GradientStop Offset="0.42" Color="#A3000000" />
+                                            <GradientStop Offset="1" Color="#F0000000" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+
+                                <Grid x:Name="MediaOverlay"
+                                      Margin="24,0,24,22"
+                                      VerticalAlignment="Bottom"
+                                      Visibility="Collapsed">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel>
+                                        <Border HorizontalAlignment="Left"
+                                                Padding="10,5"
+                                                Background="#CCFFFFFF"
+                                                CornerRadius="10">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Path x:Name="PlatformIcon"
+                                                      Width="13"
+                                                      Height="13"
+                                                      Margin="0,0,6,0"
+                                                      Data="{StaticResource LinkIconGeometry}"
+                                                      Fill="#FF171A24"
+                                                      Stretch="Uniform" />
+                                                <TextBlock x:Name="PlatformText"
+                                                           FontSize="11"
+                                                           FontWeight="Bold"
+                                                           Foreground="#FF171A24"
+                                                           Text="Unknown source" />
+                                            </StackPanel>
+                                        </Border>
+                                        <TextBlock x:Name="MediaTitleText"
+                                                   MaxWidth="900"
+                                                   Margin="0,10,0,0"
+                                                   HorizontalAlignment="Left"
+                                                   FontSize="21"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="White"
+                                                   Text="Media title"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+                                            <TextBlock x:Name="MediaAuthorText"
+                                                       Foreground="#FFD2D6DF"
+                                                       Text="Unknown author"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Margin="8,0" Foreground="#FF7D8595" Text="&#x2022;" />
+                                            <TextBlock x:Name="MediaDurationText"
+                                                       Foreground="#FFD2D6DF"
+                                                       Text="Duration unavailable" />
+                                        </StackPanel>
+                                        <TextBlock x:Name="MediaInfoText"
+                                                   Margin="0,4,0,0"
+                                                   FontSize="12"
+                                                   Foreground="#FFAEB6C5"
+                                                   Text="Source audio: not detected"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <Border Margin="0,18,0,0"
+                                Padding="22"
+                                Background="{DynamicResource SurfaceBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="20">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="18" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="18" />
+                                    <ColumnDefinition Width="170" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="18" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Style="{StaticResource SectionLabelStyle}"
+                                           Text="OUTPUT FORMAT" />
+                                <TextBlock Grid.Column="2"
+                                           Style="{StaticResource SectionLabelStyle}"
+                                           Text="QUALITY / BITRATE" />
+
+                                <ComboBox x:Name="FormatComboBox"
+                                          Grid.Row="1"
+                                          Style="{StaticResource ModernComboBoxStyle}"
+                                          SelectedIndex="0">
+                                    <ComboBoxItem Content="MP4 video" Tag="video:mp4" />
+                                    <ComboBoxItem Content="MKV video" Tag="video:mkv" />
+                                    <ComboBoxItem Content="WebM video" Tag="video:webm" />
+                                    <ComboBoxItem Content="MOV video" Tag="video:mov" />
+                                    <ComboBoxItem Content="Original audio" Tag="audio:original" />
+                                    <ComboBoxItem Content="MP3 audio" Tag="audio:mp3" />
+                                    <ComboBoxItem Content="M4A audio" Tag="audio:m4a" />
+                                    <ComboBoxItem Content="Opus audio" Tag="audio:opus" />
+                                    <ComboBoxItem Content="FLAC audio" Tag="audio:flac" />
+                                    <ComboBoxItem Content="WAV audio" Tag="audio:wav" />
+                                </ComboBox>
+
+                                <ComboBox x:Name="QualityComboBox"
+                                          Grid.Row="1"
+                                          Grid.Column="2"
+                                          Style="{StaticResource ModernComboBoxStyle}"
+                                          IsEnabled="False">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock VerticalAlignment="Center"
+                                                           Text="{Binding Label}" />
+                                                <TextBlock Margin="12,0,0,0"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                                           Opacity="0.72"
+                                                           Text="{Binding EstimatedSizeText}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <Button x:Name="DownloadButton"
+                                        Grid.Row="1"
+                                        Grid.Column="4"
+                                        Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="Download"
+                                        Click="DownloadButton_Click" />
+
+                                <Button x:Name="CancelDownloadButton"
+                                        Grid.Row="1"
+                                        Grid.Column="4"
+                                        Background="{DynamicResource ErrorSurfaceBrush}"
+                                        BorderBrush="{DynamicResource ErrorBrush}"
+                                        Foreground="{DynamicResource ErrorBrush}"
+                                        Style="{StaticResource ModernButtonStyle}"
+                                        ToolTip="Stop the current download"
+                                        Visibility="Collapsed"
+                                        Content="Cancel"
+                                        Click="CancelDownloadButton_Click" />
+
+                                <TextBlock Grid.Row="3"
+                                           Grid.ColumnSpan="5"
+                                           Style="{StaticResource SectionLabelStyle}"
+                                           Text="DOWNLOAD FOLDER" />
+
+                                <Border Grid.Row="4"
+                                        Grid.ColumnSpan="5"
+                                        Height="54"
+                                        Padding="17,0,6,0"
+                                        Background="{DynamicResource InputBackgroundBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="13">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                            <Viewbox Width="17" Height="17" Margin="0,0,11,0">
+                                                <Canvas Width="24" Height="24">
+                                                    <Path Data="M 3,6 L 9,6 L 11,8 L 21,8 L 21,19 L 3,19 Z"
+                                                          Fill="Transparent"
+                                                          Stroke="{DynamicResource AccentBrush}"
+                                                          StrokeLineJoin="Round"
+                                                          StrokeThickness="1.8" />
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock x:Name="FolderText"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       Text="No folder selected"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1"
+                                                Height="42"
+                                                MinWidth="142"
+                                                Padding="21,0"
+                                                Style="{StaticResource ModernButtonStyle}"
+                                                Content="Choose folder"
+                                                Click="ChooseFolderButton_Click" />
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <Border Margin="0,14,0,0"
+                                Padding="18,16"
+                                Background="{DynamicResource SurfaceBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="17">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="StatusText"
+                                               VerticalAlignment="Center"
+                                               FontSize="13"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               Text="Status: Ready" />
+                                    <StackPanel Grid.Column="1"
+                                                VerticalAlignment="Center"
+                                                Orientation="Horizontal">
+                                        <TextBlock x:Name="ProgressPercentText"
+                                                   Margin="12,0,0,0"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource AccentBrush}"
+                                                   Text="—" />
+                                        <StackPanel x:Name="CompletionActionsPanel"
+                                                    Margin="14,0,0,0"
+                                                    Orientation="Horizontal"
+                                                    Visibility="Collapsed">
+                                            <Button Height="34"
+                                                    MinWidth="86"
+                                                    Padding="14,0"
+                                                    Style="{StaticResource ModernButtonStyle}"
+                                                    ToolTip="Open the downloaded file"
+                                                    Content="Open file"
+                                                    Click="OpenDownloadedFileButton_Click" />
+                                            <Button Height="34"
+                                                    MinWidth="118"
+                                                    Margin="8,0,0,0"
+                                                    Padding="14,0"
+                                                    Style="{StaticResource ModernButtonStyle}"
+                                                    ToolTip="Show the downloaded file in File Explorer"
+                                                    Content="Show in folder"
+                                                    Click="ShowDownloadedFileInFolderButton_Click" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                                <ProgressBar x:Name="DownloadProgress"
+                                             Margin="0,11,0,0"
+                                             Minimum="0"
+                                             Maximum="100"
+                                             Style="{StaticResource ModernProgressBarStyle}"
+                                             Value="0" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+
+            <Grid x:Name="ErrorOverlay"
+                  Grid.RowSpan="2"
+                  Panel.ZIndex="100"
+                  Background="{DynamicResource ModalOverlayBrush}"
+                  Focusable="True"
+                  Visibility="Collapsed"
+                  KeyDown="ErrorOverlay_KeyDown"
+                  MouseLeftButtonDown="ErrorOverlay_MouseLeftButtonDown">
+                <Border x:Name="ErrorCard"
+                        Width="520"
+                        Padding="26"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="{DynamicResource SurfaceBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="20"
+                        MouseLeftButtonDown="ErrorCard_MouseLeftButtonDown"
+                        RenderTransformOrigin="0.5,0.5">
+                    <Border.RenderTransform>
+                        <ScaleTransform x:Name="ErrorCardScale" />
+                    </Border.RenderTransform>
+
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="48" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Width="42"
+                                    Height="42"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Background="{DynamicResource ErrorSurfaceBrush}"
+                                    CornerRadius="13">
+                                <TextBlock HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontSize="23"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource ErrorBrush}"
+                                           Text="!" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" Margin="8,0,10,0">
+                                <TextBlock x:Name="ErrorTitleText"
+                                           FontSize="21"
+                                           FontWeight="SemiBold"
+                                           Text="Something went wrong"
+                                           TextWrapping="Wrap" />
+                                <TextBlock Margin="0,7,0,0"
+                                           FontSize="12"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource ErrorBrush}"
+                                           Text="REQUEST COULD NOT BE COMPLETED" />
+                            </StackPanel>
+
+                        </Grid>
+
+                        <TextBlock x:Name="ErrorMessageText"
+                                   Grid.Row="1"
+                                   Margin="0,22,0,0"
+                                   FontSize="14"
+                                   LineHeight="21"
+                                   TextWrapping="Wrap" />
+
+                        <Border Grid.Row="2"
+                                Margin="0,18,0,0"
+                                Padding="15,13"
+                                Background="{DynamicResource SurfaceAltBrush}"
+                                CornerRadius="12">
+                            <StackPanel>
+                                <TextBlock FontSize="11"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource AccentBrush}"
+                                           Text="WHAT YOU CAN DO" />
+                                <TextBlock x:Name="ErrorSuggestionText"
+                                           Margin="0,6,0,0"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           LineHeight="19"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <Button x:Name="ErrorDetailsButton"
+                                Grid.Row="3"
+                                Height="36"
+                                Margin="0,16,0,0"
+                                Padding="14,0"
+                                HorizontalAlignment="Left"
+                                Style="{StaticResource ModernButtonStyle}"
+                                Content="Show technical details"
+                                Click="ErrorDetailsButton_Click" />
+
+                        <Border x:Name="ErrorDetailsPanel"
+                                Grid.Row="4"
+                                MaxHeight="210"
+                                Margin="0,12,0,0"
+                                Background="{DynamicResource InputBackgroundBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="12"
+                                Visibility="Collapsed">
+                            <TextBox x:Name="ErrorTechnicalDetailsTextBox"
+                                     MinHeight="110"
+                                     MaxHeight="208"
+                                     Padding="13"
+                                     AcceptsReturn="True"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     FontFamily="Cascadia Mono, Consolas"
+                                     FontSize="11"
+                                     Foreground="{DynamicResource TextSecondaryBrush}"
+                                     IsReadOnly="True"
+                                     TextWrapping="Wrap"
+                                     VerticalScrollBarVisibility="Auto" />
+                        </Border>
+
+                        <Grid Grid.Row="5" Margin="0,22,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Button x:Name="ErrorCopyButton"
+                                    Height="42"
+                                    Padding="18,0"
+                                    HorizontalAlignment="Left"
+                                    Style="{StaticResource ModernButtonStyle}"
+                                    Content="Copy details"
+                                    Click="ErrorCopyButton_Click" />
+
+                            <Button x:Name="ErrorGotItButton"
+                                    Grid.Column="1"
+                                    Width="112"
+                                    Height="42"
+                                    IsDefault="True"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Content="Got it"
+                                    Click="DismissErrorButton_Click" />
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>
