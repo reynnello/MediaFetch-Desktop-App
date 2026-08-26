@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using MediaFetch.Desktop.Models;
 
@@ -7,6 +9,10 @@ namespace MediaFetch.Desktop.Services;
 
 public sealed class YtDlpService
 {
+    private const string DownloadProgressPrefix = "MEDIAFETCH_DOWNLOAD|";
+    private const string PostProcessProgressPrefix = "MEDIAFETCH_POSTPROCESS|";
+    private const string OutputPathPrefix = "MEDIAFETCH_FILE|";
+
     public async Task<MediaMetadata> InspectAsync(
         Uri url,
         CancellationToken cancellationToken = default)
@@ -23,12 +29,11 @@ public sealed class YtDlpService
         return ParseMetadata(result.StandardOutput);
     }
 
-    public async Task DownloadAsync(
+    public async Task<string> DownloadAsync(
         DownloadRequest request,
+        IProgress<DownloadProgressUpdate>? progress = null,
         CancellationToken cancellationToken = default)
     {
-        Directory.CreateDirectory(request.OutputDirectory);
-
         var separatorIndex = request.FormatTag.IndexOf(':');
 
         if (separatorIndex <= 0 || separatorIndex == request.FormatTag.Length - 1)
@@ -38,30 +43,249 @@ public sealed class YtDlpService
 
         var mode = request.FormatTag[..separatorIndex];
         var targetFormat = request.FormatTag[(separatorIndex + 1)..];
-        var startInfo = CreateStartInfo(redirectStandardOutput: true);
-        startInfo.ArgumentList.Add("--no-playlist");
+        var outputDirectory = Path.GetFullPath(request.OutputDirectory);
+        Directory.CreateDirectory(outputDirectory);
+        var stagingDirectory = CreateStagingDirectory(outputDirectory);
 
-        string outputTemplate;
-
-        if (mode == "audio")
+        try
         {
-            outputTemplate = AddAudioArguments(startInfo, request, targetFormat);
+            var startInfo = CreateStartInfo(redirectStandardOutput: true);
+            startInfo.ArgumentList.Add("--no-playlist");
+            AddProgressArguments(startInfo);
+
+            string outputTemplate;
+
+            if (mode == "audio")
+            {
+                outputTemplate = AddAudioArguments(startInfo, request, targetFormat);
+            }
+            else if (mode == "video")
+            {
+                outputTemplate = AddVideoArguments(startInfo, request, targetFormat);
+            }
+            else
+            {
+                throw new ArgumentException("Invalid output mode.", nameof(request));
+            }
+
+            startInfo.ArgumentList.Add("--output");
+            startInfo.ArgumentList.Add(Path.Combine(stagingDirectory, outputTemplate));
+            startInfo.ArgumentList.Add("--print");
+            startInfo.ArgumentList.Add($"after_move:{OutputPathPrefix}%(filepath)s");
+            startInfo.ArgumentList.Add(request.Url.AbsoluteUri);
+
+            var result = await RunAsync(
+                startInfo,
+                cancellationToken,
+                line => ReportProgress(line, progress));
+            EnsureSuccess(result, "Download failed.");
+
+            var stagedFilePath = GetDownloadedFilePath(result.StandardOutput);
+            return MoveCompletedFile(stagedFilePath, stagingDirectory, outputDirectory);
         }
-        else if (mode == "video")
+        finally
         {
-            outputTemplate = AddVideoArguments(startInfo, request, targetFormat);
+            await DeleteStagingDirectoryAsync(stagingDirectory);
         }
-        else
+    }
+
+    private static string CreateStagingDirectory(string outputDirectory)
+    {
+        var directory = Path.Combine(
+            outputDirectory,
+            $".mediafetch-{Guid.NewGuid():N}.tmp");
+        Directory.CreateDirectory(directory);
+
+        try
         {
-            throw new ArgumentException("Invalid output mode.", nameof(request));
+            File.SetAttributes(
+                directory,
+                File.GetAttributes(directory) | FileAttributes.Hidden);
+        }
+        catch (IOException)
+        {
+            // The temporary directory can still be safely used and removed.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Hiding the directory is cosmetic and must not block a download.
         }
 
-        startInfo.ArgumentList.Add("--output");
-        startInfo.ArgumentList.Add(Path.Combine(request.OutputDirectory, outputTemplate));
-        startInfo.ArgumentList.Add(request.Url.AbsoluteUri);
+        return directory;
+    }
 
-        var result = await RunAsync(startInfo, cancellationToken);
-        EnsureSuccess(result, "Download failed.");
+    private static string MoveCompletedFile(
+        string stagedFilePath,
+        string stagingDirectory,
+        string outputDirectory)
+    {
+        var fullStagingDirectory = Path.TrimEndingDirectorySeparator(
+            Path.GetFullPath(stagingDirectory));
+        var fullStagedFilePath = Path.GetFullPath(stagedFilePath);
+        var stagingPrefix = fullStagingDirectory + Path.DirectorySeparatorChar;
+
+        if (!fullStagedFilePath.StartsWith(
+                stagingPrefix,
+                StringComparison.OrdinalIgnoreCase)
+            || !File.Exists(fullStagedFilePath))
+        {
+            throw new YtDlpException(
+                "The download completed, but the resulting file could not be found.");
+        }
+
+        var destinationPath = Path.Combine(
+            outputDirectory,
+            Path.GetFileName(fullStagedFilePath));
+        File.Move(fullStagedFilePath, destinationPath, overwrite: true);
+        return destinationPath;
+    }
+
+    private static async Task DeleteStagingDirectoryAsync(string stagingDirectory)
+    {
+        const int maximumAttempts = 5;
+
+        for (var attempt = 1; attempt <= maximumAttempts; attempt++)
+        {
+            try
+            {
+                if (Directory.Exists(stagingDirectory))
+                {
+                    Directory.Delete(stagingDirectory, recursive: true);
+                }
+
+                return;
+            }
+            catch (IOException) when (attempt < maximumAttempts)
+            {
+                await Task.Delay(100);
+            }
+            catch (UnauthorizedAccessException) when (attempt < maximumAttempts)
+            {
+                await Task.Delay(100);
+            }
+            catch (IOException)
+            {
+                return;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return;
+            }
+        }
+    }
+
+    private static string GetDownloadedFilePath(string standardOutput)
+    {
+        var path = standardOutput
+            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+            .Where(line => line.StartsWith(OutputPathPrefix, StringComparison.Ordinal))
+            .Select(line => line[OutputPathPrefix.Length..].Trim())
+            .LastOrDefault();
+
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            throw new YtDlpException(
+                "The download completed, but yt-dlp did not report the saved file path.");
+        }
+
+        return Path.GetFullPath(path);
+    }
+
+    private static void AddProgressArguments(ProcessStartInfo startInfo)
+    {
+        startInfo.ArgumentList.Add("--newline");
+        startInfo.ArgumentList.Add("--progress");
+        startInfo.ArgumentList.Add("--progress-delta");
+        startInfo.ArgumentList.Add("0.2");
+        startInfo.ArgumentList.Add("--progress-template");
+        startInfo.ArgumentList.Add(
+            $"download:{DownloadProgressPrefix}%(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s|%(progress.progress_idx)s|%(progress.max_progress)s");
+        startInfo.ArgumentList.Add("--progress-template");
+        startInfo.ArgumentList.Add(
+            $"postprocess:{PostProcessProgressPrefix}%(progress.status)s");
+    }
+
+    private static void ReportProgress(
+        string line,
+        IProgress<DownloadProgressUpdate>? progress)
+    {
+        if (progress is null)
+        {
+            return;
+        }
+
+        if (line.StartsWith(DownloadProgressPrefix, StringComparison.Ordinal))
+        {
+            var values = line[DownloadProgressPrefix.Length..].Split('|');
+
+            if (values.Length == 0 || !TryParsePercentage(values[0], out var percentage))
+            {
+                return;
+            }
+
+            if (values.Length >= 5
+                && int.TryParse(values[3], NumberStyles.Integer, CultureInfo.InvariantCulture, out var progressIndex)
+                && int.TryParse(values[4], NumberStyles.Integer, CultureInfo.InvariantCulture, out var maximumProgress)
+                && maximumProgress > 1)
+            {
+                var completedParts = Math.Clamp(progressIndex - 1, 0, maximumProgress - 1);
+                percentage = ((completedParts * 100) + percentage) / maximumProgress;
+            }
+
+            var status = "Downloading";
+
+            if (values.Length >= 2 && IsUsefulProgressValue(values[1]))
+            {
+                status += $"  •  {values[1].Trim()}";
+            }
+
+            if (values.Length >= 3 && IsUsefulProgressValue(values[2]))
+            {
+                status += $"  •  ETA {values[2].Trim()}";
+            }
+
+            progress.Report(new DownloadProgressUpdate(
+                Percentage: Math.Clamp(percentage, 0, 100),
+                Status: status));
+            return;
+        }
+
+        if (line.StartsWith(PostProcessProgressPrefix, StringComparison.Ordinal))
+        {
+            progress.Report(new DownloadProgressUpdate(null, "Processing media..."));
+            return;
+        }
+
+        if (line.Contains("[Merger]", StringComparison.OrdinalIgnoreCase))
+        {
+            progress.Report(new DownloadProgressUpdate(null, "Merging video and audio..."));
+        }
+        else if (line.Contains("[ExtractAudio]", StringComparison.OrdinalIgnoreCase))
+        {
+            progress.Report(new DownloadProgressUpdate(null, "Converting audio..."));
+        }
+        else if (line.Contains("[VideoRemuxer]", StringComparison.OrdinalIgnoreCase))
+        {
+            progress.Report(new DownloadProgressUpdate(null, "Finalizing video..."));
+        }
+    }
+
+    private static bool TryParsePercentage(string value, out double percentage)
+    {
+        return double.TryParse(
+            value.Trim().TrimEnd('%'),
+            NumberStyles.Float,
+            CultureInfo.InvariantCulture,
+            out percentage);
+    }
+
+    private static bool IsUsefulProgressValue(string value)
+    {
+        var trimmed = value.Trim();
+
+        return trimmed.Length > 0
+            && !string.Equals(trimmed, "N/A", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(trimmed, "Unknown", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string AddAudioArguments(
@@ -145,9 +369,12 @@ public sealed class YtDlpService
         var videoHeights = new SortedSet<int>();
         var mp4VideoHeights = new SortedSet<int>();
         var webMVideoHeights = new SortedSet<int>();
+        var videoFormatEstimates = new List<VideoFormatEstimate>();
         string? sourceAudioCodec = null;
         string? sourceAudioExtension = null;
         double? sourceAudioBitrate = null;
+        long? sourceAudioEstimatedBytes = null;
+        var durationSeconds = TryGetDouble(root, "duration");
 
         foreach (var format in formats.EnumerateArray())
         {
@@ -166,6 +393,19 @@ public sealed class YtDlpService
                         webMVideoHeights.Add(height);
                         break;
                 }
+
+                var extension = TryGetString(format, "ext");
+                var estimatedBytes = EstimateFormatBytes(format, durationSeconds);
+
+                if (extension is not null && estimatedBytes is not null)
+                {
+                    videoFormatEstimates.Add(new VideoFormatEstimate(
+                        Height: height,
+                        Extension: extension,
+                        EstimatedBytes: estimatedBytes.Value,
+                        IncludesAudio: TryGetString(format, "acodec") is { } includedAudioCodec
+                            && includedAudioCodec != "none"));
+                }
             }
 
             if (TryGetString(format, "acodec") is not { } audioCodec
@@ -183,10 +423,9 @@ public sealed class YtDlpService
                 sourceAudioCodec = audioCodec;
                 sourceAudioExtension = TryGetString(format, "ext");
                 sourceAudioBitrate = audioBitrate;
+                sourceAudioEstimatedBytes = EstimateFormatBytes(format, durationSeconds);
             }
         }
-
-        var durationSeconds = TryGetDouble(root, "duration");
 
         return new MediaMetadata(
             Title: TryGetString(root, "title"),
@@ -197,9 +436,42 @@ public sealed class YtDlpService
             VideoHeights: videoHeights.ToArray(),
             Mp4VideoHeights: mp4VideoHeights.ToArray(),
             WebMVideoHeights: webMVideoHeights.ToArray(),
+            VideoFormatEstimates: videoFormatEstimates,
             SourceAudioCodec: sourceAudioCodec,
             SourceAudioExtension: sourceAudioExtension,
-            SourceAudioBitrateKbps: sourceAudioBitrate);
+            SourceAudioBitrateKbps: sourceAudioBitrate,
+            SourceAudioEstimatedBytes: sourceAudioEstimatedBytes);
+    }
+
+    private static long? EstimateFormatBytes(
+        JsonElement format,
+        double? durationSeconds)
+    {
+        var reportedBytes = TryGetDouble(format, "filesize")
+            ?? TryGetDouble(format, "filesize_approx");
+        var bitrateKbps = TryGetDouble(format, "tbr");
+
+        if (bitrateKbps is null)
+        {
+            var videoBitrate = TryGetDouble(format, "vbr") ?? 0;
+            var audioBitrate = TryGetDouble(format, "abr") ?? 0;
+            bitrateKbps = videoBitrate + audioBitrate;
+        }
+
+        double? bitrateEstimatedBytes = null;
+
+        if (durationSeconds is > 0 && bitrateKbps is > 0)
+        {
+            bitrateEstimatedBytes = durationSeconds.Value * bitrateKbps.Value * 1000 / 8;
+        }
+
+        var estimatedBytes = new[] { reportedBytes, bitrateEstimatedBytes }
+            .Where(value => value is > 0 and <= long.MaxValue)
+            .Max();
+
+        return estimatedBytes is > 0 and <= long.MaxValue
+            ? (long)Math.Ceiling(estimatedBytes.Value)
+            : null;
     }
 
     private static ProcessStartInfo CreateStartInfo(bool redirectStandardOutput)
@@ -216,15 +488,16 @@ public sealed class YtDlpService
 
     private static async Task<ProcessResult> RunAsync(
         ProcessStartInfo startInfo,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Action<string>? lineObserver = null)
     {
         using var process = Process.Start(startInfo)
             ?? throw new YtDlpException("Could not start yt-dlp.");
 
         var outputTask = startInfo.RedirectStandardOutput
-            ? process.StandardOutput.ReadToEndAsync()
+            ? ReadStreamAsync(process.StandardOutput, lineObserver)
             : Task.FromResult(string.Empty);
-        var errorTask = process.StandardError.ReadToEndAsync();
+        var errorTask = ReadStreamAsync(process.StandardError, lineObserver);
 
         try
         {
@@ -250,6 +523,21 @@ public sealed class YtDlpService
             process.ExitCode,
             await outputTask,
             await errorTask);
+    }
+
+    private static async Task<string> ReadStreamAsync(
+        StreamReader reader,
+        Action<string>? lineObserver)
+    {
+        var output = new StringBuilder();
+
+        while (await reader.ReadLineAsync().ConfigureAwait(false) is { } line)
+        {
+            output.AppendLine(line);
+            lineObserver?.Invoke(line);
+        }
+
+        return output.ToString();
     }
 
     private static void EnsureSuccess(ProcessResult result, string fallbackMessage)

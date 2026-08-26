@@ -9,6 +9,8 @@ public sealed record MediaMetadata(
     IReadOnlyList<int> VideoHeights,
     IReadOnlyList<int> Mp4VideoHeights,
     IReadOnlyList<int> WebMVideoHeights,
+    IReadOnlyList<VideoFormatEstimate> VideoFormatEstimates,
     string? SourceAudioCodec,
     string? SourceAudioExtension,
-    double? SourceAudioBitrateKbps);
+    double? SourceAudioBitrateKbps,
+    long? SourceAudioEstimatedBytes);

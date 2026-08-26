@@ -13,6 +13,9 @@
     <SolidColorBrush x:Key="AccentPressedBrush" Color="#5E2FC0" />
     <SolidColorBrush x:Key="AccentForegroundBrush" Color="#FFFFFF" />
     <SolidColorBrush x:Key="DangerHoverBrush" Color="#D94350" />
+    <SolidColorBrush x:Key="ErrorBrush" Color="#D92D45" />
+    <SolidColorBrush x:Key="ErrorSurfaceBrush" Color="#FFFFECEF" />
+    <SolidColorBrush x:Key="ModalOverlayBrush" Color="#990C0F16" />
     <SolidColorBrush x:Key="TrackBrush" Color="#E2E6EE" />
     <SolidColorBrush x:Key="PreviewPlaceholderBrush" Color="#E9EDF5" />
     <Color x:Key="WindowShadowColor">#26000000</Color>
