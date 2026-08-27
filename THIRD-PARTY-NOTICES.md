@@ -2,6 +2,16 @@
 
 MediaFetch invokes the following separately distributed command-line tools:
 
+## Microsoft .NET
+
+- Project: <https://github.com/dotnet/runtime>
+- License: <https://github.com/dotnet/runtime/blob/main/LICENSE.TXT>
+- Third-party notices: <https://github.com/dotnet/runtime/blob/main/THIRD-PARTY-NOTICES.TXT>
+
+The portable package includes the .NET runtime. The dependencies package
+contains an unmodified official Microsoft .NET Windows Desktop Runtime
+installer whose checksum is verified against Microsoft's release metadata.
+
 ## yt-dlp
 
 - Project: <https://github.com/yt-dlp/yt-dlp>
