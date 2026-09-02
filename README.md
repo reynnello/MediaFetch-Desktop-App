@@ -12,6 +12,8 @@ public video or audio through a simple WPF interface.
   thumbnail, title, author, duration, and available qualities.
 - Downloads MP4, MKV, WebM, and MOV video.
 - Extracts original audio or converts it to MP3, M4A, Opus, FLAC, or WAV.
+- Embeds album cover art and track metadata (title, artist, album) into
+  downloaded audio files when the format supports it.
 - Shows real download progress and approximate output sizes.
 - Supports cancellation and removes unfinished temporary files.
 - Opens a completed file or reveals it in File Explorer.
@@ -30,7 +32,7 @@ smaller, but requires the .NET Desktop Runtime and media tools.
 
 ### Portable edition
 
-Download `MediaFetch-1.0.0-win-x64-portable.zip` from GitHub Releases if you
+Download `MediaFetch-1.0.1-win-x64-portable.zip` from GitHub Releases if you
 want one package with everything included.
 
 1. Extract the entire archive. Do not run the application from inside the ZIP.
@@ -43,8 +45,8 @@ No .NET, yt-dlp, FFmpeg, FFprobe, or Python installation is required.
 
 Download both of these files from the same GitHub Release:
 
-- `MediaFetch-1.0.0-win-x64-standard.zip`
-- `MediaFetch-1.0.0-win-x64-dependencies.zip`
+- `MediaFetch-1.0.1-win-x64-standard.zip`
+- `MediaFetch-1.0.1-win-x64-dependencies.zip`
 
 Then:
 
@@ -89,13 +91,13 @@ dotnet run
 Create a portable Windows x64 package:
 
 ```powershell
-.\scripts\Publish-Release.ps1 -Version 1.0.0
+.\scripts\Publish-Release.ps1 -Version 1.0.1
 ```
 
 Create the small standard package and its separate dependencies package:
 
 ```powershell
-.\scripts\Publish-StandardRelease.ps1 -Version 1.0.0
+.\scripts\Publish-StandardRelease.ps1 -Version 1.0.1
 ```
 
 The archives are written to `artifacts/`. The publish scripts copy the locally

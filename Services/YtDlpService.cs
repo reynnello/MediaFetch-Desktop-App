@@ -299,6 +299,12 @@ public sealed class YtDlpService
         startInfo.ArgumentList.Add("--audio-format");
         startInfo.ArgumentList.Add(targetFormat == "original" ? "best" : targetFormat);
 
+        if (targetFormat != "wav")
+        {
+            startInfo.ArgumentList.Add("--embed-thumbnail");
+            startInfo.ArgumentList.Add("--embed-metadata");
+        }
+
         if (targetFormat == "original")
         {
             var bitrateLabel = request.SourceAudioBitrateKbps is null
@@ -610,3 +616,4 @@ public sealed class YtDlpService
 }
 
 public sealed class YtDlpException(string message) : Exception(message);
+
