@@ -6,6 +6,8 @@ public video or audio through a simple WPF interface.
 ![.NET](https://img.shields.io/badge/.NET-10-512BD4)
 ![Windows](https://img.shields.io/badge/Windows-x64-0078D4)
 
+![MediaFetch Screenshot](Assets/preview.png)
+
 ## Features
 
 - Automatically inspects a public media link and displays its source,
